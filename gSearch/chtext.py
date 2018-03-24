@@ -1,18 +1,22 @@
-import re
 import urllib.request
 from bs4 import BeautifulSoup
- 
-html = urllib.request.urlopen('http://bgr.com/2014/10/15/google-android-5-0-lollipop-release/')
-soup = BeautifulSoup(html)
-data = soup.findAll(text=True)
- 
-def visible(element):
-    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
-        return False
-    elif re.match('<!--.*-->', str(element.encode('utf-8'))):
-        return False
-    return True
- 
-result = filter(visible, data)
- 
-print list(result)
+
+
+def htmlText(url):
+    html = urllib.request.urlopen(url).read()
+    soup = BeautifulSoup(html,"lxml")
+
+    # kill all script and style elements
+    for script in soup(["script", "style"]):
+        script.extract()    # rip it out
+
+    # get text
+    text = soup.get_text()
+
+    # break into lines and remove leading and trailing space on each
+    lines = (line.strip() for line in text.splitlines())
+    # break multi-headlines into a line each
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    # drop blank lines
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    print(text)
